@@ -21,3 +21,14 @@ python -m restaurant.staff --database data/kitchen.sqlite3 adjust-stock delivery
 ```
 
 The second example requires an existing item with expected stock 10. Adjustments are local staff commands; no unauthenticated stock-write route was added to the customer service. Tests cover retried deliveries, stale counts, capacity release, cancellation, and preparation demand.
+
+## Pickup changes and reservation integrity
+
+```sh
+python -m restaurant.staff move-pickup ORDER_ID '2026-07-25T18:00:00+00:00' REQUEST_KEY 1
+python -m restaurant.staff audit-capacity
+```
+
+`PickupReservations` lets staff move an accepted order to another aligned 15-minute slot. The new slot must be 15 minutes to 24 hours ahead. Capacity is acquired and the old reservation released in the same transaction; a full destination rolls back the whole change. Stock and prices remain unchanged. Preparation already started, stale versions, and changed requests using an existing idempotency key are rejected. A no-op move preserves the version.
+
+Successful changes have an ordered event history. `audit_capacity()` compares reservations against non-cancelled orders without modifying data. These are local staff commands; the public order endpoint does not expose unauthenticated reservation changes.

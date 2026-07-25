@@ -5,6 +5,7 @@ import json
 from .orders import Kitchen
 from .inventory import InventoryLedger
 from .fulfillment import FulfillmentBoard
+from .reservations import PickupReservations
 
 
 def main():
@@ -20,9 +21,23 @@ def main():
     stock.add_argument("delta", type=int)
     stock.add_argument("expected_stock", type=int)
     stock.add_argument("note")
+    move = commands.add_parser("move-pickup")
+    for argument in ("order_id", "pickup", "key"):
+        move.add_argument(argument)
+    move.add_argument("version", type=int)
+    commands.add_parser("audit-capacity")
     args = parser.parse_args()
     try:
         kitchen = Kitchen(args.database)
+        if args.command == "move-pickup":
+            result = PickupReservations(kitchen).move(
+                args.order_id, args.pickup, args.version, args.key
+            )
+            print(json.dumps(result, indent=2))
+            return
+        if args.command == "audit-capacity":
+            print(json.dumps(PickupReservations(kitchen).audit_capacity(), indent=2))
+            return
         result = (
             FulfillmentBoard(kitchen).queue(args.start, args.end)
             if args.command == "board"
