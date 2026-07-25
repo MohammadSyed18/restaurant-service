@@ -1,0 +1,1 @@
+{"name":"restaurant-service","version":"1.0.0","private":true,"type":"module","scripts":{"check":"node --check web/app.js"}}
